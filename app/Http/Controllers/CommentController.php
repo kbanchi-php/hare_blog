@@ -73,9 +73,9 @@ class CommentController extends Controller
      * @param  \App\Models\Comment  $comment
      * @return \Illuminate\Http\Response
      */
-    public function edit(Comment $comment)
+    public function edit(Post $post, Comment $comment)
     {
-        //
+        return view('comments.edit', compact('post', 'comment'));
     }
 
     /**
@@ -85,9 +85,25 @@ class CommentController extends Controller
      * @param  \App\Models\Comment  $comment
      * @return \Illuminate\Http\Response
      */
-    public function update(CommentRequest $request, Comment $comment)
+    public function update(CommentRequest $request, Post $post, Comment $comment)
     {
-        //
+        if ($request->user()->cannot('update', $comment)) {
+            return redirect()->route('posts.show', $post)
+                ->withErrors('you can not edit comment written by others.');
+        }
+
+        $comment->fill($request->all());
+
+        DB::beginTransaction();
+        try {
+            $comment->save();
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()->withErrors($e->getMessage());
+        }
+
+        return redirect()->route('posts.show', $post)->with('notice', 'complete edit comment.');
     }
 
     /**
@@ -96,8 +112,17 @@ class CommentController extends Controller
      * @param  \App\Models\Comment  $comment
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Comment $comment)
+    public function destroy(Post $post, Comment $comment)
     {
-        //
+        DB::beginTransaction();
+        try {
+            $comment->delete();
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()->withErrors($e->getMessage());
+        }
+
+        return redirect()->route('posts.show', $post)->with('notice', 'complete delete comment.');
     }
 }
