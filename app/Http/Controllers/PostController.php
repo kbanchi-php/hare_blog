@@ -82,7 +82,9 @@ class PostController extends Controller
      */
     public function show(Post $post)
     {
-        return view('posts.show', compact('post'));
+        $post = Post::with(['user'])->find($post->id);
+        $comments = $post->comments()->latest()->get()->load(['user']);
+        return view('posts.show', compact('post', 'comments'));
     }
 
     /**
