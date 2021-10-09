@@ -22,6 +22,11 @@ class Post extends Model
         return $this->belongsTo(\App\Models\User::class);
     }
 
+    public function comments()
+    {
+        return $this->hasMany(\App\Models\Comment::class);
+    }
+
     // public function image_url()
     // {
     //     return Storage::url('images/posts/' . $this->image);

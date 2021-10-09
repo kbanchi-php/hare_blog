@@ -32,4 +32,8 @@ Route::resource('posts', App\Http\Controllers\PostController::class)
 Route::resource('posts', App\Http\Controllers\PostController::class)
     ->only(['index', 'show']);
 
+Route::resource('posts.comments', App\Http\Controllers\CommentController::class)
+    ->only(['create', 'store', 'edit', 'update', 'destroy'])
+    ->middleware('auth');
+
 require __DIR__ . '/auth.php';
