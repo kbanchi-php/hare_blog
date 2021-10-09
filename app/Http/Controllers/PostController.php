@@ -43,7 +43,7 @@ class PostController extends Controller
         $post->user_id = auth()->user()->id;
 
         $file = $request->file('image');
-        $post->image = date('YmdHis') . '_' . $file->getClientOriginalName();
+        $post->image = self::createFileName($file);
 
         // dd($post);
 
@@ -91,7 +91,7 @@ class PostController extends Controller
      */
     public function edit(Post $post)
     {
-        //
+        return view('posts.edit', compact('post'));
     }
 
     /**
@@ -103,7 +103,46 @@ class PostController extends Controller
      */
     public function update(PostRequest $request, Post $post)
     {
-        //
+        if ($request->user()->cannot('update', $post)) {
+            return redirect()->route('posts.show', $post)
+                ->withErrors('you can not edit post written by others.');
+        }
+
+        $file = $request->file('image');
+        if ($file) {
+            $delete_file_path = $post->image_url;
+            $post->image = self::createFileName($file);
+        }
+
+        $post->fill($request->all());
+
+        // begin transaction
+        DB::beginTransaction();
+        try {
+
+            // db insert
+            $post->save();
+
+            if ($file) {
+                // file save
+                if (!Storage::putFileAs('images/posts', $file, $post->image)) {
+                    throw new \Exception('faild to save image...');
+                }
+                // delete old file
+                if (!Storage::delete($delete_file_path)) {
+                    throw new \Exception('faild to delete old image...');
+                }
+            }
+
+            // commit
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withInput()->withErrors($e->getMessage());
+        }
+
+        return redirect()->route('posts.show', $post)
+            ->with('notice', 'complete edit post.');
     }
 
     /**
@@ -115,5 +154,10 @@ class PostController extends Controller
     public function destroy(Post $post)
     {
         //
+    }
+
+    private static function createFileName($file)
+    {
+        return date('YmdHis') . '_' . $file->getClientOriginalName();
     }
 }
