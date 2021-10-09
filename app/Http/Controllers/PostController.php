@@ -155,7 +155,27 @@ class PostController extends Controller
      */
     public function destroy(Post $post)
     {
-        //
+        // begin transaction
+        DB::beginTransaction();
+        try {
+
+            // db delete
+            $post->delete();
+
+            // file delete
+            if (!Storage::delete($post->image_path)) {
+                throw new \Exception('faild to delete image...');
+            }
+
+            // commit
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withInput()->withErrors($e->getMessage());
+        }
+
+        return redirect()->route('posts.index')
+            ->with('notice', 'complete delete post.');
     }
 
     private static function createFileName($file)
