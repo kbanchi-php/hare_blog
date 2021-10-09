@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\PostRequest;
+use App\Models\Post;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
@@ -23,7 +27,7 @@ class PostController extends Controller
      */
     public function create()
     {
-        //
+        return view('posts.create');
     }
 
     /**
@@ -32,9 +36,38 @@ class PostController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(PostRequest $request)
     {
-        //
+        $post = new Post();
+        $post->fill($request->all());
+        $post->user_id = auth()->user()->id;
+
+        $file = $request->file('image');
+        $post->image = date('YmdHis') . '_' . $file->getClientOriginalName();
+
+        // dd($post);
+
+        // begin transaction
+        DB::beginTransaction();
+        try {
+
+            // insert db
+            $post->save();
+
+            // file save
+            if (!Storage::putFileAs('images/posts', $file, $post->image)) {
+                throw new \Exception('faild to save image...');
+            }
+
+            // commit
+            db::commit();
+        } catch (\Exception $e) {
+            // rollback
+            DB::rollback();
+            return back()->withInput()->withErrors($e->getMessage());
+        }
+
+        return redirect()->route('posts.show', $post);
     }
 
     /**
@@ -43,7 +76,7 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(Post $post)
     {
         //
     }
@@ -54,7 +87,7 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit(Post $post)
     {
         //
     }
@@ -66,7 +99,7 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(PostRequest $request, Post $post)
     {
         //
     }
@@ -77,7 +110,7 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Post $post)
     {
         //
     }

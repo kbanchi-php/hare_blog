@@ -26,10 +26,10 @@ Route::get('/dashboard', function () {
 })->middleware(['auth'])->name('dashboard');
 
 Route::resource('posts', App\Http\Controllers\PostController::class)
-    ->only(['index', 'show']);
-
-Route::resource('posts', App\Http\Controllers\PostController::class)
     ->only(['create', 'store', 'edit', 'update', 'destroy'])
     ->middleware('auth');
+
+Route::resource('posts', App\Http\Controllers\PostController::class)
+    ->only(['index', 'show']);
 
 require __DIR__ . '/auth.php';
