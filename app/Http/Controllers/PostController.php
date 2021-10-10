@@ -114,7 +114,7 @@ class PostController extends Controller
 
         $file = $request->file('image');
         if ($file) {
-            $delete_file_path = $post->image_url;
+            $delete_file_path = $post->image_path;
             $post->image = self::createFileName($file);
         }
 
